@@ -1,0 +1,149 @@
+version: '3.8'
+services:
+  postgres-db:
+    image: postgres:16.1
+    container_name: postgres-db
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=passwd
+      - POSTGRES_DB=db1
+    volumes:
+      - ./postgres-db/init-db:/docker-entrypoint-initdb.d:ro
+
+  redis:
+    image: redis/redis-stack-server:7.2.0-v7
+    container_name: redis
+    ports:
+      - 6379:6379
+
+  hivemq:
+    image: hivemq/hivemq4:4.25.0
+    container_name: hivemq
+    ports:
+      - 1883:1883
+      - 28080:8080
+
+  kafka-broker:
+    image: confluentinc/cp-kafka:7.5.3
+    container_name: kafka-broker
+    ports:
+      - 9092:9092
+      - 9101:9101
+    environment:
+      - KAFKA_NODE_ID=1
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka-broker:29092,PLAINTEXT_HOST://localhost:9092
+      - KAFKA_JMX_PORT=9101
+      - KAFKA_JMX_HOSTNAME=localhost
+      - KAFKA_PROCESS_ROLES=broker,controller
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+      - KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
+      #- KAFKA_CONFLUENT_CLUSTER_LINK_METADATA_TOPIC_MIN_ISR=1
+      - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
+      - KAFKA_CONTROLLER_QUORUM_VOTERS=1@kafka-broker:29093
+      - KAFKA_LISTENERS=PLAINTEXT://kafka-broker:29092,CONTROLLER://kafka-broker:29093,PLAINTEXT_HOST://0.0.0.0:9092
+      - KAFKA_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - CLUSTER_ID=MkU3OEVBNTcwNTJENDM2Qk
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.5.3
+    container_name: schema-registry
+    depends_on:
+      - kafka-broker
+    ports:
+      - 8081:8081
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: PLAINTEXT://kafka-broker:29092
+      SCHEMA_REGISTRY_DEBUG: true
+
+  kafka-connect:
+    image: confluentinc/cp-kafka-connect-base:7.5.3
+    container_name: kafka-connect
+    depends_on:
+      - kafka-broker
+      - postgres-db
+      - schema-registry
+    ports:
+      - 8083:8083
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: "kafka-broker:29092"
+      CONNECT_REST_PORT: 8083
+      CONNECT_GROUP_ID: kafka-connect
+      CONNECT_CONFIG_STORAGE_TOPIC: _connect-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: _connect-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: _connect-status
+      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect"
+      CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: "[%d] %p %X{connector.context}%m (%c:%L)%n"
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
+    #  ---------------
+      CONNECT_PLUGIN_PATH: /usr/share/java,/usr/share/confluent-hub-components,/data/connect-jars
+    # If you want to use the Confluent Hub installer to d/l component, but make them available
+    # when running this offline, spin up the stack once and then run : 
+    #   docker cp kafka-connect:/usr/share/confluent-hub-components ./data/connect-jars
+    volumes:
+      - $PWD/data:/data
+    # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
+    command:
+      - bash
+      - -c
+      - |
+        echo "Installing Connector"
+        confluent-hub install --no-prompt confluentinc/kafka-connect-jdbc:10.7.4
+        #confluent-hub install jcustenborder/kafka-connect-redis:0.0.5
+        confluent-hub install --no-prompt redis/redis-kafka-connect:0.9.0
+        confluent-hub install --no-prompt confluentinc/kafka-connect-mqtt:1.7.2
+        #
+        echo "Downloading JDBC driver"
+        cd /usr/share/confluent-hub-components/confluentinc-kafka-connect-jdbc
+        # Find the latest version of this https://dev.mysql.com/downloads/connector/j/
+        curl -O https://jdbc.postgresql.org/download/postgresql-42.7.1.jar 
+        #
+        echo "Launching Kafka Connect worker"
+        /etc/confluent/docker/run &
+        #
+        sleep infinity
+
+  ksqldb:
+    image: confluentinc/ksqldb-server:0.29.0
+    hostname: ksqldb
+    container_name: ksqldb
+    depends_on:
+      - schema-registry
+      - kafka-connect
+      - kafka-broker
+    ports:
+      - "8088:8088"
+    environment:
+      KSQL_LISTENERS: http://0.0.0.0:8088
+      KSQL_BOOTSTRAP_SERVERS: kafka-broker:29092
+      KSQL_KSQL_LOGGING_PROCESSING_STREAM_AUTO_CREATE: "true"
+      KSQL_KSQL_LOGGING_PROCESSING_TOPIC_AUTO_CREATE: "true"
+      KSQL_KSQL_CONNECT_URL: http://kafka-connect:8083
+      KSQL_KSQL_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      KSQL_KSQL_SERVICE_ID: hung-ksqldb-01
+      KSQL_KSQL_HIDDEN_TOPICS: '^_.*'
+      KSQL_KSQL_LOGGING_PROCESSING_TOPIC_REPLICATION_FACTOR: 1
+      KSQL_KSQL_STREAMS_REPLICATION_FACTOR: 1
+
+  #kafka-ui:
+  #  image: provectuslabs/kafka-ui:latest
+  #  container_name: kafka-ui
+  #  environment:
+  #    KAFKA_CLUSTERS_0_NAME: local
+  #    KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-broker:29092
+  #    KAFKA_CLUSTERS_0_JMXPORT: 9101
+  #    KAFKA_CLUSTERS_0_SCHEMAREGISTRY: "http://schema-registry:8081"
+  #  depends_on:
+  #    - kafka-broker
+  #  ports:
+  #    - 9000:8080
+
