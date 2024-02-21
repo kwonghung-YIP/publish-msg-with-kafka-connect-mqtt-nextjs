@@ -89,8 +89,8 @@ services:
     # If you want to use the Confluent Hub installer to d/l component, but make them available
     # when running this offline, spin up the stack once and then run : 
     #   docker cp kafka-connect:/usr/share/confluent-hub-components ./data/connect-jars
-    volumes:
-      - $PWD/data:/data
+    #volumes:
+    #  - $PWD/data:/data
     # In the command section, $ are replaced with $$ to avoid the error 'Invalid interpolation format for "command" option'
     command:
       - bash

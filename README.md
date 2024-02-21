@@ -48,7 +48,7 @@ curl -i -X POST http://localhost:8083/connectors \
         "connection.url": "jdbc:postgresql://postgres-db/db1",
         "connection.user": "admin",
         "connection.password": "passwd",
-        "table.whitelist": "races,odds_forecast",
+        "table.whitelist": "race,v_race_horse,odds_forecast",
         "mode": "timestamp+incrementing",
         "incrementing.column.name": "ver",
         "timestamp.column.name": "lastupd",
@@ -171,6 +171,7 @@ EMIT CHANGES;
 Other commands for ksqlDB, list different objects in ksqlDB
 ```sql
 show connectors;
+show topics;
 show streams;
 show tables;
 describe odds_forecast extended;
@@ -217,7 +218,8 @@ curl -i -X POST http://localhost:8083/connectors \
 Check connector status and configuration
 ```bash
 curl localhost:8083/connectors/my-redis-sink/status
-
+```
+```bash
 curl localhost:8083/connectors/my-redis-sink/config
 ```
 
@@ -229,6 +231,8 @@ curl -i -X DELETE http://localhost:8083/connectors/my-redis-sink/
 #### Resource and References
 
 ## Create redisSearch index
+
+Tips!!! convert ksqlDB date to redis epoch year value
 
 Run the redis-cli embedded into the redis docker image
 ```bash
@@ -253,6 +257,13 @@ Operations for redisSearch index: List all, show info, delete
 ft._list
 ft.info odds
 ft.dropindex odds
+```
+
+Other useful redis commands
+```bash
+keys *
+json.get postgres_src_odds_forecast:bef34f7f-d784-4995-ac82-e4840902b9a1 $
+json.get all_odds:e3dcd46b-9d55-435d-9cb5-c0198be9a211 $
 ```
 
 #### Resource and References

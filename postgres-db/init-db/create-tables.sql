@@ -1,4 +1,24 @@
-create table if not exists races (
+create table if not exists horse (
+    id uuid not null default gen_random_uuid() primary key,
+    name varchar(30) not null,
+    owner varchar(50),
+    foaled date,
+    ver int not null default 1,
+    created timestamp not null default current_timestamp,
+    lastupd timestamp not null default current_timestamp
+);
+
+create table if not exists jockey (
+    id uuid not null default gen_random_uuid() primary key,
+    name varchar(30) not null,
+    age numeric(3) not null,
+    licence varchar(30),
+    ver int not null default 1,
+    created timestamp not null default current_timestamp,
+    lastupd timestamp not null default current_timestamp
+);
+
+create table if not exists race (
     id uuid not null default gen_random_uuid() primary key,
     race_no numeric(2) not null,
     race_date date not null,
@@ -12,9 +32,31 @@ create table if not exists races (
     lastupd timestamp not null default current_timestamp
 );
 
+create table if not exists race_horse_jockey (
+    id uuid not null default gen_random_uuid() primary key,
+    race_id uuid not null references race(id),
+    horse_id uuid not null references horse(id),
+    jockey_id uuid not null references jockey(id),
+    draw numeric(2) not null,
+    ver int not null default 1,
+    created timestamp not null default current_timestamp,
+    lastupd timestamp not null default current_timestamp
+);
+
+create or replace view v_race_horse
+as  
+select 
+    rhj.id, r.race_date, r.race_no,
+    rhj.draw, h.name as horse, j.name as jockey,
+    rhj.ver, rhj.created, rhj.lastupd
+from race r 
+join race_horse_jockey rhj on r.id = rhj.race_id
+join horse h on rhj.horse_id = h.id
+join jockey j on rhj.jockey_id = j.id;
+
 create table if not exists odds_forecast (
     id uuid not null default gen_random_uuid() primary key,
-    race_id uuid not null references races(id),
+    race_id uuid not null references race(id),
     first_leg numeric(2) not null,
     second_leg numeric(2) not null,
     odds numeric(5,3) not null,
@@ -25,16 +67,36 @@ create table if not exists odds_forecast (
 );
 
 create or replace procedure genForecastOdds(
-    race_id uuid
+    p_race_id uuid
 ) language plpgsql
 as $$
 declare
     v_runners integer;
+    rec record;
 begin
-    select race_id, runners
-    into race_id, v_runners 
-    from races
-    where race_id = race_id;
+    select runners
+    into v_runners 
+    from race
+    where id = p_race_id;
+
+    for rec in 
+        with random_horse as (
+            select row_number() over() as rn, id, name from horse order by random()
+        ), random_jockey as (
+            select row_number() over() as rn, id, name from jockey order by random()
+        )
+        select h.rn, h.id as horse_id, h.name as horse_name, 
+            j.id as jockey_id, j.name as jockey_name
+        from random_horse h 
+        join random_jockey j on h.rn = j.rn
+        order by h.rn limit v_runners
+        loop
+            insert into race_horse_jockey (
+                race_id, draw, horse_id, jockey_id
+            ) values (
+                p_race_id, rec.rn, rec.horse_id, rec.jockey_id
+            );
+        end loop;
 
     for fstLeg IN 1..v_runners loop
         for secLeg IN 1..v_runners loop
@@ -42,7 +104,7 @@ begin
                 insert into odds_forecast (
                     race_id, first_leg, second_leg, odds, sts
                 ) values (
-                    race_id, fstLeg, secLeg, random()*100, 'OK'
+                    p_race_id, fstLeg, secLeg, random()*100, 'OK'
                 );
             end if;
         end loop;
@@ -51,10 +113,92 @@ end $$;
 
 do $$
 declare
-    race_id races.id%type;
+    race_id race.id%type;
     race_rec record;
 begin
-    insert into races (
+    insert into horse (
+        name, owner
+    ) values
+        ('Best Life','Hemmings Racing'),
+        ('Cave Article','Coral Racing Club'),
+        ('Cave Bleu','Mrs C. Voce'),
+        ('Clatterbridge','Hedgehoppers'),
+        ('Entity of Substanz','Mr Colm Donlon'),
+        ('Gentleman''s Relish','Lindsey Nash & The Famous Five'),
+        ('Ginger Jonny','David Mason and Ginger Jonny Syndicate'),
+        ('Grand Albert','Owners Group 123'),
+        ('Jagwar','Mr John P. McManus'),
+        ('Jukebox Fury','Middleham Park Racing XCIV'),
+        ('Kentanddover','Graeme Moore,Kate & Andrew Brooks'),
+        ('Leader In The Park','Lady Dulverton'),
+        ('Mythe Bridge','Mrs S. M. Newell'),
+        ('Paris Cercy','Mr Ian Charles Wilson'),
+        ('The Dark Edge','The Dark Edge Partnership'),
+        ('Cotoneaster','Noel Williams'),
+        ('Horacio Apple''s','Highclere TB Racing-Apple and Dudgeon'),
+        ('Stringtoyourbow','Gilman Int Plywood St Quinton S-Daniel'),
+        ('Almazhar Grade','Arthur''s Party'),
+        ('Presenting Jeremy','Got The Game Sewm Up'),
+        ('Big Blue Moon','Barrett,Meredith,Panniers,Wilde'),
+        ('Betterforeeveryone','Mr Rupert Anton'),
+        ('Event of Sivola','CW Racing Club URSA Major Racing Ltd'),
+        ('Roxboro Road','Mr M. E. Sowersby'),
+        ('Mister Moodles','Mike and Eileen Newbould'),
+        ('Paradias','Dodds-Smith,Farrel,Hodgson & Coupland'),
+        ('Williethebuilder','Mrs Susan Carsberg'),
+        ('Garitsa Bay','John Nicholls Racing'),
+        ('Montys Soldier','Mr O. S. Harris'),
+        ('Scout Master','DUDB Marketing Limited'),
+        ('Selwan','Andy Bell & Fergus Lyons'),
+        ('Skiffle Man','S T Racing - The Founders'' Syndicate'),
+        ('Support Act','The M Team'),
+        ('Ravanelli','A Night In Newmarket');
+
+    insert into jockey (
+        name, age
+    ) values 
+        ('Luke Scott',random()*30+20),
+        ('Harry Bannister',random()*30+20),
+        ('Richie McLernon',random()*30+20),
+        ('Ben Jones',random()*30+20),
+        ('Harry Skelton',random()*30+20),
+        ('Niall Houlihan',random()*30+20),
+        ('Caoilin Quinn',random()*30+20),
+        ('Rob Hargreaves',random()*30+20),
+        ('Tom Bellamy',random()*30+20),
+        ('Marc Goldstein',random()*30+20),
+        ('Rex Dingle',random()*30+20),
+        ('Tabitha Worsley',random()*30+20),
+        ('Jac Quinlan',random()*30+20),
+        ('James Davies',random()*30+20),
+        ('Freddie Gordon',random()*30+20),
+        ('Lorcan Williams',random()*30+20),
+        ('Freddie Gingell',random()*30+20),
+        ('Micheal Nolan',random()*30+20),
+        ('Bredan Powell',random()*30+20),
+        ('Robert Dunne',random()*30+20),
+        ('Alex JAry',random()*30+20),
+        ('Paul Mulrennan',random()*30+20),
+        ('Shane Gray',random()*30+20),
+        ('Andrew Mullen',random()*30+20),
+        ('Tom Eaves',random()*30+20),
+        ('Jason Hart',random()*30+20),
+        ('Joe Fanning',random()*30+20),
+        ('Dougie Costello',random()*30+20),
+        ('William Carver',random()*30+20),
+        ('Phil Dennis',random()*30+20),
+        ('Stan Sheppard',random()*30+20),
+        ('Jamie Hamilton',random()*30+20),
+        ('Carmeron Iles',random()*30+20),
+        ('Charlie Maggs',random()*30+20),
+        ('Ciaran Gethings',random()*30+20),
+        ('Nico de Boinville',random()*30+20),
+        ('Nick Scholfield',random()*30+20),
+        ('Brian Hughes',random()*30+20),
+        ('Robert Dunne',random()*30+20),
+        ('Ned Fox',random()*30+20);
+
+    insert into race (
         race_no, race_date, race_time, racecourse, runners
     ) values
         (1, '09-feb-2024', '13:32', 'Wolverhampton', 11),
@@ -65,7 +209,7 @@ begin
         (3, '10-feb-2024', '16:45', 'Newcastle', 16);
 
     for race_rec in
-        select * from races
+        select * from race
         loop
             call genForecastOdds(race_rec.id);
         end loop;
