@@ -1,5 +1,5 @@
 
-import { OddsItem } from "@/components/Odds";
+import { OddsItem, RaceHorse } from "@/components/Odds";
 import moment from "moment";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "redis";
@@ -26,23 +26,21 @@ export const GET = async (
     const epoch = Math.floor(date.unix() / 86400);
     console.log(`epoch date: ${epoch}`)
 
-    const result = await client.ft.search('odds', `(@race_date:[${epoch} ${epoch}] @race_no:[${race} ${race}])`, {
-        LIMIT: { from: 0, size: 500 }
+    const result = await client.ft.search('horse', `(@race_date:[${epoch} ${epoch}] @race_no:[${race} ${race}])`, {
+        LIMIT: { from: 0, size: 30 }
     });
 
     //console.log(typeof result);
     console.log(`ft.search result - total:${result.total} #result:${result.documents.length}`);
 
-    const oddsList = result.documents.map(({ id, value }) => ({
+    const horseList = result.documents.map(({ id, value }) => ({
         id: id,
-        fstLeg: value.FIRST_LEG,
-        secLeg: value.SECOND_LEG,
-        pattern: value.PATTERN,
-        odds: value.ODDS,
-        status: value.STATUS,
+        draw: value.DRAW,
+        horse: value.HORSE,
+        jockey: value.JOCKEY,
         ver: value.VER,
         lastUpdate: new Date(value.LASTUPD)
-    } as OddsItem));
+    } as RaceHorse));
 
-    return NextResponse.json(oddsList);
+    return NextResponse.json(horseList);
 }

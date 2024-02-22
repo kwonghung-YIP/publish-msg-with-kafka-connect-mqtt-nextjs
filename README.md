@@ -48,10 +48,11 @@ curl -i -X POST http://localhost:8083/connectors \
         "connection.url": "jdbc:postgresql://postgres-db/db1",
         "connection.user": "admin",
         "connection.password": "passwd",
+        "table.types": "TABLE,VIEW",
         "table.whitelist": "race,v_race_horse,odds_forecast",
-        "mode": "timestamp+incrementing",
-        "incrementing.column.name": "ver",
+        "mode": "timestamp",
         "timestamp.column.name": "lastupd",
+        "validate.non.null": "false",
         "poll.interval.ms": 2000,
         "topic.prefix": "postgres_src_",
         "transforms": "ValueToKey,ExtractValue",
@@ -87,6 +88,9 @@ curl localhost:8083/connectors?expand=status&expand=info
 ```
 
 #### Resource and References
+- [JDBC Source Connector for Confluent Platform](https://docs.confluent.io/kafka-connectors/jdbc/current/source-connector/overview.html)
+- [JDBC Source Connector Configuration Properties](https://docs.confluent.io/kafka-connectors/jdbc/current/source-connector/source_config_options.html)
+- [PostgresSQL Source (JDBC) Connector for Confluent Cloud](https://docs.confluent.io/cloud/current/connectors/cc-postgresql-source.html)
 
 ## Create KStream and KTable in ksqlDB
 Run the ksql-cli embedded into the ksqlDB
@@ -115,15 +119,31 @@ Create kTable race from postgres DB races table
 ```sql
 CREATE TABLE race (
   id string primary key,
-  race_no decimal(2,0),
   race_date date,
+  race_no decimal(2,0),
   race_time time,
   racecourse string,
   ver int,
   lastUpd timestamp
 ) WITH (
-  kafka_topic = 'postgres_src_races',
+  kafka_topic = 'postgres_src_race',
   value_format = 'AVRO'
+);
+```
+
+```sql
+CREATE TABLE race_horse_tbl (
+  id String primary key,
+  race_date date,
+  race_no decimal(2,0),
+  draw decimal(2,0),
+  horse string,
+  jockey string,
+  ver int,
+  lastUpd timestamp
+) WITH (
+  KAFKA_TOPIC = 'postgres_src_v_race_horse',
+  VALUE_FORMAT = 'AVRO'
 );
 ```
 
@@ -168,6 +188,17 @@ FROM odds_forecast
 EMIT CHANGES;
 ```
 
+```sql
+CREATE OR REPLACE TABLE race_horse
+WITH (
+  KAFKA_TOPIC = 'race_horse',
+  VALUE_FORMAT = 'JSON'
+) AS
+SELECT *
+FROM race_horse_tbl
+EMIT CHANGES;
+```
+
 Other commands for ksqlDB, list different objects in ksqlDB
 ```sql
 show connectors;
@@ -191,6 +222,7 @@ SET 'auto.offset.reset' = 'earliest';
 ```
 
 #### Resource and References
+- [ksqlDB SQL quick refrence](https://docs.ksqldb.io/en/latest/developer-guide/ksqldb-reference/quick-reference/)
 
 ## Create kafka-redis-sink-connector to push message from topic all_odds to redis cache
 
@@ -199,11 +231,11 @@ Create redis-sink-connector with kafka-connect REST API
 curl -i -X POST http://localhost:8083/connectors \
   -H "Content-Type: application/json" \
   -d '{
-      "name": "my-redis-sink",
+      "name": "my-redis-sink-arvo",
       "config": {
         "connector.class": "com.redis.kafka.connect.RedisSinkConnector",
         "tasks.max": "1",
-        "topics": "all_odds,postgres_src_odds_forecast",
+        "topics": "all_odds",
         "redis.uri": "redis://redis:6379",
         "redis.key": "${topic}",
         "redis.command": "JSONSET",
@@ -215,20 +247,43 @@ curl -i -X POST http://localhost:8083/connectors \
     }'
 ```
 
+```bash
+curl -i -X POST http://localhost:8083/connectors \
+  -H "Content-Type: application/json" \
+  -d '{
+      "name": "my-redis-sink-json",
+      "config": {
+        "connector.class": "com.redis.kafka.connect.RedisSinkConnector",
+        "tasks.max": "1",
+        "topics": "race_horse",
+        "redis.uri": "redis://redis:6379",
+        "redis.key": "${topic}",
+        "redis.command": "JSONSET",
+        "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+        "value.converter": "org.apache.kafka.connect.storage.StringConverter"
+      }
+    }'
+```
+
 Check connector status and configuration
 ```bash
-curl localhost:8083/connectors/my-redis-sink/status
+curl localhost:8083/connectors/my-redis-sink-avro/status
+curl localhost:8083/connectors/my-redis-sink-json/status
 ```
 ```bash
-curl localhost:8083/connectors/my-redis-sink/config
+curl localhost:8083/connectors/my-redis-sink-avro/config
+curl localhost:8083/connectors/my-redis-sink-json/status
 ```
 
 Delete connector
 ```bash
-curl -i -X DELETE http://localhost:8083/connectors/my-redis-sink/
+curl -i -X DELETE http://localhost:8083/connectors/my-redis-sink-avro/
+curl -i -X DELETE http://localhost:8083/connectors/my-redis-sink-json/
 ```
 
 #### Resource and References
+- [Redis Sink Connector for Confluent Platfrom](https://docs.confluent.io/kafka-connectors/redis/current/overview.html)
+- [Redis Sink Connector Configuration Properties](https://docs.confluent.io/kafka-connectors/redis/current/connector_config.html)
 
 ## Create redisSearch index
 
@@ -241,7 +296,8 @@ docker exec -it redis redis-cli
 
 Create redisSearch index (Tips!!! the JSON properties defined in ft.create statement is case-sensitive)
 ```bash
-ft.create odds on json schema $.RACE_DATE as race_date numeric $.RACE_NO as race_no numeric $.RACECOURSE as racecourse text
+ft.create odds PREFIX 1 all_odds: on json schema $.RACE_DATE as race_date numeric $.RACE_NO as race_no numeric
+ft.create horse PREFIX 1 race_horse: on json schema $.RACE_DATE as race_date numeric $.RACE_NO as race_no numeric
 ```
 
 Search queries for testing the index
@@ -267,6 +323,12 @@ json.get all_odds:e3dcd46b-9d55-435d-9cb5-c0198be9a211 $
 ```
 
 #### Resource and References
+- [Redis command - ft.create](https://redis.io/commands/ft.create/)
+- [Redis command - ft.search](https://redis.io/commands/ft.search/)
+- [Redis command - ft.explain](https://redis.io/commands/ft.explain/)
+- [Redis command - json.get](https://redis.io/commands/json.get/)
+- [Redis command - json.set](https://redis.io/commands/json.set/)
+
 
 ## Create kafka-mqtt-sink-connector to push message from all_odds_json to hivemq
 
@@ -304,6 +366,7 @@ curl -i -X DELETE http://localhost:8083/connectors/my-mqtt-sink/
 ```
 
 #### Resource and References
+- [MQTT Sink Connector for Confluent Platform](https://docs.confluent.io/kafka-connectors/mqtt/current/mqtt-sink-connector/overview.html)
 
 ## Test MQTT topic subscription with hivemq-cli
 
@@ -311,7 +374,7 @@ Run HiveMQ-cli with with docker imae
 ```bash
 docker run -it \
   --rm --name=hivemq-cli2 \
-  --network kafka-stack_default --link hivemq \
+  --network publish-msg-with-kafka-connect-mqtt-nextjs_default --link hivemq \
   hivemq/mqtt-cli shell
 ```
 
@@ -322,12 +385,12 @@ connect --host=hivemq --port=1883
 
 Subscribe the all_odds topic and waiting for the messages
 ```bash
-sub -t all_odds --stay --jsonOutput
+sub -t all_odds_json --stay --jsonOutput
 ```
 
 Publish to all_odd topic if necessary
 ```bash
-pub -t all_odds -m 'Try Me!!'
+pub -t all_odds_json -m 'Try Me!!'
 ```
 
 #### Resource and References
@@ -343,6 +406,7 @@ docker exec -it postgres-db psql --host=localhost --username=admin --dbname=db1
 update all odds with random odds
 ```sql
 update odds_forecast set odds = random()*100, ver = ver + 1, lastupd=current_timestamp;
+update race_horse_jockey set ver = ver + 1, lastupd=current_timestamp;
 ```
 
 #### Resource and References
@@ -361,13 +425,8 @@ update odds_forecast set odds = random()*100, ver = ver + 1, lastupd=current_tim
 - [Kafka Connect Deep Dive - Converters and Serialization Explained](https://www.confluent.io/en-gb/blog/kafka-connect-deep-dive-converters-serialization-explained)
 - [Kafka Connect Configurations for Confluent Platform](https://docs.confluent.io/platform/current/installation/configuration/connect/index.html)
 - [Kafka Connect Self-managed Connectors for Confluent Platform](https://docs.confluent.io/platform/current/connect/kafka_connectors.html)
-- [Kafka Connect JDBC Source Connector for Confluent Platform](https://docs.confluent.io/kafka-connectors/jdbc/current/source-connector/overview.html)
-- [Kafka Connect Redis Sink Connector for Confluent Platfrm](https://docs.confluent.io/kafka-connectors/redis/current/overview.html)
-- [Kafka Connect MQTT Sink Connector for Confluent Platform](https://docs.confluent.io/kafka-connectors/mqtt/current/mqtt-sink-connector/overview.html)
 - [Kafka Connect Single Message Transforms for Confluent](https://docs.confluent.io/platform/current/connect/transforms/overview.html)
-- [PostgresSQL Source (JDBC) Connector for Confluent Cloud](https://docs.confluent.io/cloud/current/connectors/cc-postgresql-source.html)
 - [kafka broker and controller server configuration reference](https://docs.confluent.io/platform/current/installation/configuration/broker-configs.html)
-- [ksqlDB SQL quick refrence](https://docs.ksqldb.io/en/latest/developer-guide/ksqldb-reference/quick-reference/)
 - [ksqlDB server configuration reference](https://docs.ksqldb.io/en/latest/reference/server-configuration/)
 - [Debezium - open source change data capture project](https://debezium.io/)
 - [Kafka Connect - How to use Single Message Transforms in Kafka Connect](https://www.confluent.io/blog/kafka-connect-single-message-transformation-tutorial-with-examples/)

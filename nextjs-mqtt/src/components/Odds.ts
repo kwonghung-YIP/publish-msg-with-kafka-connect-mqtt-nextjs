@@ -6,3 +6,12 @@ export interface OddsItem {
     ver: number;
     lastUpdate: Date;
 }
+
+export interface RaceHorse {
+    id: string;
+    draw: number;
+    horse: string;
+    jockey: string;
+    ver: number;
+    lastUpdate: Date;
+}
