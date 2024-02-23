@@ -1,0 +1,73 @@
+* {
+    font-family: Menlo,Monaco,Consolas,"Courier New",monospace;
+  }
+  
+  .odds-table-wrapper {
+    display: grid;
+    grid-auto-flow: dense;
+    grid-template-columns: 80px repeat(var(--no-of-horse,4),80px);
+  }
+  
+  .odds-table-wrapper>div {
+    padding: 5px 8px 5px 8px;
+    margin: -1px 0px 0px -1px;
+    border: 1px solid black;
+    text-align: center;
+  }
+  
+  .cell {
+  }
+  
+  @keyframes cell-hover {
+    from {background-color: white; color: black;}
+    to   {background-color: gray; color: white;}
+  }
+  
+  
+  .cell:hover {
+    animation-name: cell-hover;
+    animation-duration: 1s;
+    animation-direction: normal;
+    /*https://cubic-bezier.com/#.02,.96,.35,.9*/
+    animation-timing-function: cubic-bezier(.02,.96,.35,.9);
+    animation-fill-mode: forwards;
+  }
+  
+  .cell.max{
+    background-color: red;
+    color: #ffffff;
+    border-width: 0px;
+    margin: 0px;
+  }
+  
+  .cell.min {
+    background-color: blue;
+    color: #ffffff;
+    border-width: 0px;
+    margin: 0px;
+  }
+  
+  @keyframes cell-updated {
+    from {background-color: yellow;}
+    to   {background-color: grey;}
+  }
+  
+  .cell.updated {
+    animation-name: cell-updated;
+    animation-duration: 3s;
+    animation-direction: normal;
+    animation-iteration-count: 1;
+    animation-timing-function: linear;
+  }
+  
+  .col-header {
+    grid-column-start: 1;
+    background-color: green;
+    color: white;
+  }
+  
+  .row-header {
+    grid-row-start: 1;
+    background-color: green;
+    color: white;
+  }

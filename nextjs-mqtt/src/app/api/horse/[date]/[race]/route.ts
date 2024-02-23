@@ -27,7 +27,8 @@ export const GET = async (
     console.log(`epoch date: ${epoch}`)
 
     const result = await client.ft.search('horse', `(@race_date:[${epoch} ${epoch}] @race_no:[${race} ${race}])`, {
-        LIMIT: { from: 0, size: 30 }
+        LIMIT: { from: 0, size: 30 },
+        SORTBY: { BY: "draw", DIRECTION: "ASC"}
     });
 
     //console.log(typeof result);

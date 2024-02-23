@@ -16,8 +16,7 @@ const Page = async ({params}:{params:{date:string,race:string}}) => {
     const odds:OddsItem[] = await fetchOdds(params.date,params.race);
     return (
         <>
-            <div>TryMe!!!! {params.date} {params.race} {JSON.stringify(horses)} {JSON.stringify(odds)}</div>
-            <OddsTable/>
+            <OddsTable horses={horses} initOdds={odds}/>
         </>
     )
 }

@@ -27,7 +27,9 @@ postgresql => kafka-connect-jdbc-source => ksqldb => kafka-connect-redis-sink =>
 To clear up the docker runtime:
 ```bash
 docker compose down
-#or
+```
+or
+```bash
 docker rm -f `docker ps -a -q`
 ```
 
@@ -35,6 +37,12 @@ Start the docker compose:
 ```bash
 docker compose up -d
 ```
+
+### Resource and References
+- [kafka broker and controller server configuration reference](https://docs.confluent.io/platform/current/installation/configuration/broker-configs.html)
+- [Kafka Connect Configurations for Confluent Platform](https://docs.confluent.io/platform/current/installation/configuration/connect/index.html)
+- [ksqlDB server configuration reference](https://docs.ksqldb.io/en/latest/reference/server-configuration/)
+- [Docker image - redis-stack for RedisJSON](https://hub.docker.com/r/redis/redis-stack)
 
 ## Create kafka-jdbc-source-connector
 Create the connector with kafka-connect REST API
@@ -87,7 +95,12 @@ List all installed connectors
 curl localhost:8083/connectors?expand=status&expand=info
 ```
 
-#### Resource and References
+### Resource and References
+- [Kafka Connect Deep Dive - Converters and Serialization Explained](https://www.confluent.io/en-gb/blog/kafka-connect-deep-dive-converters-serialization-explained)
+- [Kafka Connect Self-managed Connectors for Confluent Platform](https://docs.confluent.io/platform/current/connect/kafka_connectors.html)
+- [Kafka Connect Single Message Transforms for Confluent](https://docs.confluent.io/platform/current/connect/transforms/overview.html)
+- [Kafka Connect - How to use Single Message Transforms in Kafka Connect](https://www.confluent.io/blog/kafka-connect-single-message-transformation-tutorial-with-examples/)
+- [Debezium - open source change data capture project](https://debezium.io/)
 - [JDBC Source Connector for Confluent Platform](https://docs.confluent.io/kafka-connectors/jdbc/current/source-connector/overview.html)
 - [JDBC Source Connector Configuration Properties](https://docs.confluent.io/kafka-connectors/jdbc/current/source-connector/source_config_options.html)
 - [PostgresSQL Source (JDBC) Connector for Confluent Cloud](https://docs.confluent.io/cloud/current/connectors/cc-postgresql-source.html)
@@ -221,7 +234,7 @@ Set the query to read from the beginning of the topic
 SET 'auto.offset.reset' = 'earliest';
 ```
 
-#### Resource and References
+### Resource and References
 - [ksqlDB SQL quick refrence](https://docs.ksqldb.io/en/latest/developer-guide/ksqldb-reference/quick-reference/)
 
 ## Create kafka-redis-sink-connector to push message from topic all_odds to redis cache
@@ -281,7 +294,7 @@ curl -i -X DELETE http://localhost:8083/connectors/my-redis-sink-avro/
 curl -i -X DELETE http://localhost:8083/connectors/my-redis-sink-json/
 ```
 
-#### Resource and References
+### Resource and References
 - [Redis Sink Connector for Confluent Platfrom](https://docs.confluent.io/kafka-connectors/redis/current/overview.html)
 - [Redis Sink Connector Configuration Properties](https://docs.confluent.io/kafka-connectors/redis/current/connector_config.html)
 
@@ -297,7 +310,7 @@ docker exec -it redis redis-cli
 Create redisSearch index (Tips!!! the JSON properties defined in ft.create statement is case-sensitive)
 ```bash
 ft.create odds PREFIX 1 all_odds: on json schema $.RACE_DATE as race_date numeric $.RACE_NO as race_no numeric
-ft.create horse PREFIX 1 race_horse: on json schema $.RACE_DATE as race_date numeric $.RACE_NO as race_no numeric
+ft.create horse PREFIX 1 race_horse: on json schema $.RACE_DATE as race_date numeric $.RACE_NO as race_no numeric $.DRAW as draw numeric sortable
 ```
 
 Search queries for testing the index
@@ -313,6 +326,7 @@ Operations for redisSearch index: List all, show info, delete
 ft._list
 ft.info odds
 ft.dropindex odds
+ft.dropindex horse
 ```
 
 Other useful redis commands
@@ -322,7 +336,8 @@ json.get postgres_src_odds_forecast:bef34f7f-d784-4995-ac82-e4840902b9a1 $
 json.get all_odds:e3dcd46b-9d55-435d-9cb5-c0198be9a211 $
 ```
 
-#### Resource and References
+### Resource and References
+- [Redis Search - Query data](https://redis.io/docs/interact/search-and-query/query/)
 - [Redis command - ft.create](https://redis.io/commands/ft.create/)
 - [Redis command - ft.search](https://redis.io/commands/ft.search/)
 - [Redis command - ft.explain](https://redis.io/commands/ft.explain/)
@@ -365,7 +380,7 @@ Delete connector
 curl -i -X DELETE http://localhost:8083/connectors/my-mqtt-sink/
 ```
 
-#### Resource and References
+### Resource and References
 - [MQTT Sink Connector for Confluent Platform](https://docs.confluent.io/kafka-connectors/mqtt/current/mqtt-sink-connector/overview.html)
 
 ## Test MQTT topic subscription with hivemq-cli
@@ -393,7 +408,8 @@ Publish to all_odd topic if necessary
 pub -t all_odds_json -m 'Try Me!!'
 ```
 
-#### Resource and References
+### Resource and References
+- [HiveMQ CLI - Reference](https://www.hivemq.com/blog/mqtt-cli/)
 
 
 ## Update postgres DB tables with postgresql-cli
@@ -409,7 +425,7 @@ update odds_forecast set odds = random()*100, ver = ver + 1, lastupd=current_tim
 update race_horse_jockey set ver = ver + 1, lastupd=current_timestamp;
 ```
 
-#### Resource and References
+### Resource and References
 
 ## GitHub sample project
 - [Confluent Inc - demo-scene - building-a-stream-pipeline](https://github.com/confluentinc/demo-scene/blob/master/build-a-streaming-pipeline/demo_build-a-streaming-pipeline.adoc)
@@ -422,14 +438,9 @@ update race_horse_jockey set ver = ver + 1, lastupd=current_timestamp;
 - [ksqlDB & Advanced Stream Processing Tutorials|Inside ksqlDB](https://www.youtube.com/watch?v=IPJXIKrohww&list=PLa7VYi0yPIH0SG2lvtS2Aoa12F22jKYYJ)
 
 ## Document and Reference
-- [Kafka Connect Deep Dive - Converters and Serialization Explained](https://www.confluent.io/en-gb/blog/kafka-connect-deep-dive-converters-serialization-explained)
-- [Kafka Connect Configurations for Confluent Platform](https://docs.confluent.io/platform/current/installation/configuration/connect/index.html)
-- [Kafka Connect Self-managed Connectors for Confluent Platform](https://docs.confluent.io/platform/current/connect/kafka_connectors.html)
-- [Kafka Connect Single Message Transforms for Confluent](https://docs.confluent.io/platform/current/connect/transforms/overview.html)
-- [kafka broker and controller server configuration reference](https://docs.confluent.io/platform/current/installation/configuration/broker-configs.html)
-- [ksqlDB server configuration reference](https://docs.ksqldb.io/en/latest/reference/server-configuration/)
-- [Debezium - open source change data capture project](https://debezium.io/)
-- [Kafka Connect - How to use Single Message Transforms in Kafka Connect](https://www.confluent.io/blog/kafka-connect-single-message-transformation-tutorial-with-examples/)
-- [Docker image - redis-stack for RedisJSON](https://hub.docker.com/r/redis/redis-stack)
-- [Redis Search - Query data](https://redis.io/docs/interact/search-and-query/query/)
+
+
+
 - [moment.js - Doc](https://momentjs.com/docs/#/displaying/unix-timestamp-milliseconds/)
+- [mqtt.js - GitHub + Doc](https://github.com/mqttjs)
+
