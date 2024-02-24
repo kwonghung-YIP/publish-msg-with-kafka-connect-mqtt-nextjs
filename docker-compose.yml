@@ -134,6 +134,8 @@ services:
       KSQL_KSQL_HIDDEN_TOPICS: '^_.*'
       KSQL_KSQL_LOGGING_PROCESSING_TOPIC_REPLICATION_FACTOR: 1
       KSQL_KSQL_STREAMS_REPLICATION_FACTOR: 1
+    volumes:
+      - ./ksqldb:/home/appuser/init-sql:ro
 
   #kafka-ui:
   #  image: provectuslabs/kafka-ui:latest

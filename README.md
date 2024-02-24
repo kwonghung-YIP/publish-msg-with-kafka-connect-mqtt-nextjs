@@ -109,6 +109,8 @@ curl localhost:8083/connectors?expand=status&expand=info
 Run the ksql-cli embedded into the ksqlDB
 ```bash
 docker exec -it ksqldb /bin/ksql http://localhost:8088
+
+docker exec -it ksqldb /bin/ksql --file /home/appuser/init-sql/init.sql http://localhost:8088
 ```
 
 Create kStream odds from postgres DB odds_forecast table
@@ -305,6 +307,8 @@ Tips!!! convert ksqlDB date to redis epoch year value
 Run the redis-cli embedded into the redis docker image
 ```bash
 docker exec -it redis redis-cli
+
+docker exec -it redis redis-cli keys *
 ```
 
 Create redisSearch index (Tips!!! the JSON properties defined in ft.create statement is case-sensitive)
@@ -431,7 +435,7 @@ update all odds with random odds
 update odds_forecast set odds = random()*100, ver = ver + 1, lastupd=current_timestamp;
 
 update odds_forecast set odds = random()*100, ver = ver + 1, lastupd=current_timestamp
-where first_leg = 2 and second_leg = 1;
+where race_id = (select id from race where race_date = '2024-02-10' and race_no = 1);
 
 update odds_forecast set odds = random()*100, ver = ver + 1, lastupd=current_timestamp
 where first_leg = 2 and second_leg = 1 
