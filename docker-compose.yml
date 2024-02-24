@@ -23,6 +23,7 @@ services:
     container_name: hivemq
     ports:
       - 1883:1883
+      - 8000:8000
       - 28080:8080
 
   kafka-broker:

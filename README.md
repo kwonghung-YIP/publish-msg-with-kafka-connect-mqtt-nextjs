@@ -393,6 +393,11 @@ docker run -it \
   hivemq/mqtt-cli shell
 ```
 
+Check server config file in HiveMQ
+```bash
+docker exec -it hivemq cat conf/config.xml
+```
+
 Connect to hiveMQ broker
 ```bash
 connect --host=hivemq --port=1883
@@ -410,6 +415,8 @@ pub -t all_odds_json -m 'Try Me!!'
 
 ### Resource and References
 - [HiveMQ CLI - Reference](https://www.hivemq.com/blog/mqtt-cli/)
+- [HiveMQ and Docker](https://docs.hivemq.com/hivemq/latest/user-guide/docker.html)
+- [Docker Hub hivemq/hivemq4 docker image](https://hub.docker.com/r/hivemq/hivemq4)
 
 
 ## Update postgres DB tables with postgresql-cli
@@ -422,10 +429,40 @@ docker exec -it postgres-db psql --host=localhost --username=admin --dbname=db1
 update all odds with random odds
 ```sql
 update odds_forecast set odds = random()*100, ver = ver + 1, lastupd=current_timestamp;
+
+update odds_forecast set odds = random()*100, ver = ver + 1, lastupd=current_timestamp
+where first_leg = 2 and second_leg = 1;
+
+update odds_forecast set odds = random()*100, ver = ver + 1, lastupd=current_timestamp
+where first_leg = 2 and second_leg = 1 
+and race_id = (select id from race where race_date = '2024-02-09' and race_no = 1);
+
 update race_horse_jockey set ver = ver + 1, lastupd=current_timestamp;
 ```
 
 ### Resource and References
+- [postgres SQL command](https://www.postgresql.org/docs/current/sql-commands.html)
+
+## Nextjs front-end
+
+Subsrcibe to HiveMQ "all_odds_json" topic in mqtt(tcp) protocol with MQTT.js package 
+```bash
+npx mqtt sub -t 'all_odds_json' -h 'localhost' -p '1883' -l 'mqtt' -i 'mqttjs-client-1' -v
+```
+Subsrcibe to HiveMQ "all_odds_json" topic in ws(websocket) protocol with MQTT.js package (not working) 
+```bash
+npx mqtt sub -t 'all_odds_json' -h 'localhost/mqtt' -p '8000' -l 'ws' -i 'mqttjs-client-1' -v
+```
+### Testing URLs
+- (http://192.168.19.130:3000/api/horse/20240210/1)
+- (http://192.168.19.130:3000/api/odds/20240210/1)
+- (http://192.168.19.130:3000/odds/20240209/1)
+
+### Resource and References
+- [moment.js - Doc](https://momentjs.com/docs/#/displaying/unix-timestamp-milliseconds/)
+- [mqtt.js - GitHub + Doc](https://github.com/mqttjs)
+- [npm - classnames](https://www.npmjs.com/package/classnames)
+
 
 ## GitHub sample project
 - [Confluent Inc - demo-scene - building-a-stream-pipeline](https://github.com/confluentinc/demo-scene/blob/master/build-a-streaming-pipeline/demo_build-a-streaming-pipeline.adoc)
@@ -437,10 +474,6 @@ update race_horse_jockey set ver = ver + 1, lastupd=current_timestamp;
 - [ksqlDB and Stream Processing Tutorials|ksqlDB 101](https://www.youtube.com/watch?v=UBUddayuPL8&list=PLa7VYi0yPIH3ulxsOf5g43_QiB-HOg5_Y)
 - [ksqlDB & Advanced Stream Processing Tutorials|Inside ksqlDB](https://www.youtube.com/watch?v=IPJXIKrohww&list=PLa7VYi0yPIH0SG2lvtS2Aoa12F22jKYYJ)
 
-## Document and Reference
 
 
-
-- [moment.js - Doc](https://momentjs.com/docs/#/displaying/unix-timestamp-milliseconds/)
-- [mqtt.js - GitHub + Doc](https://github.com/mqttjs)
 

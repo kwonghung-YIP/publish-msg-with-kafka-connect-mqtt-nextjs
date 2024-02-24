@@ -1,6 +1,8 @@
 import { ReactElement } from "react"
 import { OddsItem, RaceHorse } from "./Odds"
 import "./OddsTable.css"
+import classNames from "classnames"
+import moment from "moment"
 
 const OddsTableView = ({
     horses,odds
@@ -9,8 +11,21 @@ const OddsTableView = ({
     odds:Map<string,OddsItem>
 }) => {
 
-    let oddsCells: Array<ReactElement> = []
+    const maxOdds = Array.from(odds.values())
+        .reduce((result,item) => Math.max(item.odds,result),0);
+    const minOdds = Array.from(odds.values())
+        .reduce((result,item) => Math.min(item.odds,result),99999);
+
+    const justUpdated = (date?:Date):boolean => {
+        if (date===undefined) {
+            return false
+        } else {
+            return moment().subtract(5,'second').isBefore(date)
+        }
+    }
  
+    let oddsCells: Array<ReactElement> = []
+
     for (let row=0;row<=horses.length;row++) { //first-leg
         for (let col=0;col<=horses.length;col++) { //second-leg
             const key = row+"-"+col
@@ -29,7 +44,13 @@ const OddsTableView = ({
                     if (item==undefined) {
                         oddsCells.push(<div key={key}>-</div>)
                     } else {
-                        oddsCells.push(<div key={key} className="cell">{item.odds}</div>)
+                        let cellClass = classNames({
+                            "cell": true,
+                            "max": item.odds >= maxOdds,
+                            "min": item.odds <= minOdds,
+                            "updated": justUpdated(item.lastUpdate)
+                        })
+                        oddsCells.push(<div key={key} className={cellClass}>{item.odds}</div>)
                     }
                 }
             }
