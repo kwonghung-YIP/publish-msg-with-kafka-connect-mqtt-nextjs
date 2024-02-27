@@ -322,7 +322,7 @@ Search queries for testing the index
 ft.search odds '@no:(1)'
 ft.search odds '@pattern:(1-2)'
 ft.search odds '@venue:(Sandown)'
-ft.search odds '(@race_date:[19756 19756] @race_no:[1 1])'
+ft.search odds '(@race_date:[19762 19762] @race_no:[1 1])'
 ```
 
 Operations for redisSearch index: List all, show info, delete
@@ -435,7 +435,7 @@ update all odds with random odds
 update odds_forecast set odds = random()*100, ver = ver + 1, lastupd=current_timestamp;
 
 update odds_forecast set odds = random()*100, ver = ver + 1, lastupd=current_timestamp
-where race_id = (select id from race where race_date = '2024-02-10' and race_no = 1);
+where race_id = (select id from race where race_date = '2024-02-09' and race_no = 1);
 
 update odds_forecast set odds = random()*100, ver = ver + 1, lastupd=current_timestamp
 where first_leg = 2 and second_leg = 1 

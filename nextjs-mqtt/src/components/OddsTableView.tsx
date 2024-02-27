@@ -1,8 +1,10 @@
-import { ReactElement } from "react"
+import { AnimationEventHandler, ReactElement, useState } from "react"
 import { OddsItem, RaceHorse } from "./Odds"
 import "./OddsTable.css"
 import classNames from "classnames"
-import moment from "moment"
+import * as pino from "pino"
+
+const log = pino.pino()
 
 const OddsTableView = ({
     horses,odds
@@ -16,14 +18,6 @@ const OddsTableView = ({
     const minOdds = Array.from(odds.values())
         .reduce((result,item) => Math.min(item.odds,result),99999);
 
-    const justUpdated = (date?:Date):boolean => {
-        if (date===undefined) {
-            return false
-        } else {
-            return moment().subtract(5,'second').isBefore(date)
-        }
-    }
- 
     let oddsCells: Array<ReactElement> = []
 
     for (let row=0;row<=horses.length;row++) { //first-leg
@@ -41,16 +35,12 @@ const OddsTableView = ({
                     oddsCells.push(<div key={key}>{col}</div>)
                 } else {
                     const item = odds.get(key)
+                    //log.info(`getOdds with key ${key}`)
+                    //log.info(`oddsItem: ${JSON.stringify(item)}`)
                     if (item==undefined) {
                         oddsCells.push(<div key={key}>-</div>)
                     } else {
-                        let cellClass = classNames({
-                            "cell": true,
-                            "max": item.odds >= maxOdds,
-                            "min": item.odds <= minOdds,
-                            "updated": justUpdated(item.lastUpdate)
-                        })
-                        oddsCells.push(<div key={key} className={cellClass}>{item.odds}</div>)
+                        oddsCells.push(<OddsTableCell key={key} oddsItem={item} maxOdds={maxOdds} minOdds={minOdds}/>)
                     }
                 }
             }
@@ -64,6 +54,30 @@ const OddsTableView = ({
             </div>
         </>
     )
+}
+
+const OddsTableCell = ({
+    oddsItem,maxOdds,minOdds
+}:{
+    oddsItem:OddsItem,maxOdds:number,minOdds:number
+}) => {
+
+    const [updated,setUpdated] = useState(() => oddsItem.updated)
+
+    log.info(`${oddsItem.fstLeg+"-"+oddsItem.secLeg} updated? ${updated} - ${oddsItem.updated}`)
+
+    const onAnimationEnd:AnimationEventHandler = (event) => {
+        setUpdated(false)
+    }
+
+    const cellClass = classNames({
+        "cell": true,
+        "max": oddsItem.odds >= maxOdds,
+        "min": oddsItem.odds <= minOdds,
+        "updated": oddsItem.updated
+    })
+
+    return (<div className={cellClass} onAnimationEnd={onAnimationEnd}>{oddsItem.odds}</div>)
 }
 
 export default OddsTableView
