@@ -5,7 +5,6 @@ export interface OddsItem {
     odds: number;
     ver: number;
     lastUpdate: Date;
-    updated: boolean;
 }
 
 export interface RaceHorse {

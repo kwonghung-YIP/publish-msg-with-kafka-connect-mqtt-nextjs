@@ -44,8 +44,7 @@ export const GET = async (
         odds: value.ODDS,
         status: value.STATUS,
         ver: value.VER,
-        lastUpdate: new Date(value.LASTUPD),
-        updated: false
+        lastUpdate: new Date(value.LASTUPD)
     } as OddsItem));
 
     return NextResponse.json(oddsList);

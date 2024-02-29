@@ -23,8 +23,7 @@ const OddsTable = ({
     const [oddsMap,setOddsMap] = useImmer(new Map(initOdds.map(odds=>[getKey(odds),odds])))
 
     const updateOdds = (odds:OddsItem) => {
-        //log.info(`update odds ${JSON.stringify(odds)}`)
-        odds.updated = true
+        log.info(`update odds ${JSON.stringify(odds)}`)
         setOddsMap(draft => {
             draft.set(getKey(odds),odds)
         })
