@@ -23,10 +23,13 @@ const OddsTable = ({
     const [oddsMap,setOddsMap] = useImmer(new Map(initOdds.map(odds=>[getKey(odds),odds])))
 
     const updateOdds = (odds:OddsItem) => {
-        log.info(`update odds ${JSON.stringify(odds)}`)
+        log.debug(`update odds ${JSON.stringify(odds)}`)
+        const rbId = 'rb-'+odds.fstLeg+"-"+odds.secLeg;
+        document.getElementById("rb-0-0")?.focus()
         setOddsMap(draft => {
             draft.set(getKey(odds),odds)
         })
+        document.getElementById(rbId)?.focus()
     }
 
     return (

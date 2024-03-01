@@ -111,6 +111,15 @@ begin
     end loop;
 end $$;
 
+/*create or update procedure updateRandomOdds(
+    p_race_date date,
+    p_race_no number
+) language plpgsql
+as $$
+declare
+begin
+end $$;*/
+
 do $$
 declare
     race_id race.id%type;

@@ -2,6 +2,20 @@
   font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
 }
 
+.table-wrapper {
+  display: grid;
+  grid-auto-flow: dense;
+  grid-template-columns: 200px 1000px;
+}
+
+.horse-col-wrapper>div {
+  padding: 5px 8px 5px 8px;
+  margin: -1px 0px 0px -1px;
+  border: 1px solid black;
+  text-align: left;
+  height: 25px;
+}
+
 .odds-table-wrapper {
   display: grid;
   grid-auto-flow: dense;
@@ -17,18 +31,9 @@
 
 .cell {}
 
-@keyframes cell-hover {
-  from {
-    background-color: white;
-    color: black;
-  }
-
-  to {
-    background-color: gray;
-    color: white;
-  }
+.odds-table-wrapper input[type=radio] {
+  width: 0px;
 }
-
 
 .cell:hover {
   animation-name: shaking;
@@ -50,49 +55,29 @@
   }
 }
 
+.cell:focus-within {
+  animation-name: highlight-fadeout;
+  animation-duration: 3s;
+  animation-iteration-count: 1;
+}
+
+@keyframes highlight-fadeout {
+  0% {
+    background-color: yellow;
+  }
+
+  100% {
+    background-color: white;
+  }
+}
+
 .cell.max {
   background-color: red;
-  color: #ffffff;
-  border-width: 0px;
-  margin: 0px;
 }
 
 .cell.min {
   background-color: blue;
-  color: #ffffff;
-  border-width: 0px;
-  margin: 0px;
 }
-
-@keyframes cell-updated {
-  from {
-    background-color: yellow;
-  }
-
-  to {
-    background-color: grey;
-  }
-}
-
-.cell.updated {
-  animation-name: cell-updated;
-  animation-duration: 3s;
-  animation-direction: normal;
-  animation-iteration-count: 1;
-  animation-timing-function: linear;
-}
-
-.updated2 {
-  background-color: white;
-  transition: 
-    background 1s 10s
-}
-
-/*@starting-style {
-  .update2 {
-    background-color: yellow;
-  }
-}*/
 
 .col-header {
   grid-column-start: 1;
