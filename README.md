@@ -442,6 +442,14 @@ where first_leg = 2 and second_leg = 1
 and race_id = (select id from race where race_date = '2024-02-09' and race_no = 1);
 
 update race_horse_jockey set ver = ver + 1, lastupd=current_timestamp;
+
+select r.race_date, r.race_no, 
+  o.first_leg, o.second_leg, o.odds, o.ver, o.lastupd
+from odds_forecast o
+join race r on r.id = o.race_id
+where r.race_date = '2024-02-09'
+and race_no = 1
+order by lastupd desc limit 5;
 ```
 
 ### Resource and References

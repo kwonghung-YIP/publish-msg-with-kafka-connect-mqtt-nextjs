@@ -90,13 +90,13 @@ begin
         from random_horse h 
         join random_jockey j on h.rn = j.rn
         order by h.rn limit v_runners
-        loop
-            insert into race_horse_jockey (
-                race_id, draw, horse_id, jockey_id
-            ) values (
-                p_race_id, rec.rn, rec.horse_id, rec.jockey_id
-            );
-        end loop;
+    loop
+        insert into race_horse_jockey (
+            race_id, draw, horse_id, jockey_id
+        ) values (
+            p_race_id, rec.rn, rec.horse_id, rec.jockey_id
+        );
+    end loop;
 
     for fstLeg IN 1..v_runners loop
         for secLeg IN 1..v_runners loop
@@ -111,14 +111,31 @@ begin
     end loop;
 end $$;
 
-/*create or update procedure updateRandomOdds(
+create or replace procedure updateRandomOdds(
     p_race_date date,
-    p_race_no number
+    p_race_no integer
 ) language plpgsql
 as $$
 declare
+    legs integer ARRAY[2];
 begin
-end $$;*/
+    legs := array (
+        select draw from v_race_horse
+        where race_date = p_race_date
+        and race_no = p_race_no
+        order by random() limit 2
+    );
+
+    update odds_forecast 
+    set odds = random()*100, 
+        ver = ver + 1, 
+        lastupd=current_timestamp
+    where first_leg = legs[1] and second_leg = legs[2] 
+    and race_id = (
+        select id from race 
+        where race_date = p_race_date 
+        and race_no = p_race_no);
+end $$;
 
 do $$
 declare
@@ -210,9 +227,11 @@ begin
     insert into race (
         race_no, race_date, race_time, racecourse, runners
     ) values
-        (1, '09-feb-2024', '13:32', 'Wolverhampton', 11),
+        (1, '09-feb-2024', '13:32', 'Wolverhampton', 5),
         (2, '09-feb-2024', '14:02', 'Wolverhampton', 7),
         (3, '09-feb-2024', '14:32', 'Wolverhampton', 15),
+        (4, '09-feb-2024', '14:32', 'Wolverhampton', 22),
+        (5, '09-feb-2024', '14:32', 'Wolverhampton', 17),
         (1, '10-feb-2024', '15:35', 'Newcastle', 9),
         (2, '10-feb-2024', '16:10', 'Newcastle', 12),
         (3, '10-feb-2024', '16:45', 'Newcastle', 16);
@@ -223,7 +242,6 @@ begin
             call genForecastOdds(race_rec.id);
         end loop;
     
-
     /*
     insert into races (
         race_no, race_date, race_time, venue

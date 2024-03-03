@@ -23,3 +23,5 @@ echo "create redis indexes..."
 docker exec -it redis redis-cli ft.create odds PREFIX 1 all_odds: on json schema $.RACE_DATE as race_date numeric $.RACE_NO as race_no numeric
 
 docker exec -it redis redis-cli ft.create horse PREFIX 1 race_horse: on json schema $.RACE_DATE as race_date numeric $.RACE_NO as race_no numeric $.DRAW as draw numeric sortable
+
+./updateOdds.sh
