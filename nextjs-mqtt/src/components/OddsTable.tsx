@@ -35,8 +35,7 @@ const OddsTable = ({
     return (
         <>
             <OddsTableView horses={horses} odds={oddsMap}/>
-            <MQTTAdapter serverConfig={{url:"ws://192.168.19.130:8000/mqtt",topic:"all_odds_json"}} 
-                updateOdds={updateOdds}/>
+            <MQTTAdapter topic="all_odds_json" updateOdds={updateOdds}/>
         </>
         
     )

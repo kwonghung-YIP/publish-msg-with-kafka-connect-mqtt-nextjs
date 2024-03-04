@@ -1,36 +1,21 @@
 import * as pino from "pino"
 import { OddsItem } from "./Odds"
-import mqtt from "mqtt"
-import { memo, useEffect } from "react"
-
-type MQTTServerConfig = {
-    url: string;
-    topic: string;
-}
+import { useContext, useEffect } from "react"
+import { MQTTClientContext } from "./MQTTClientApp"
 
 const log = pino.pino()
 
-export const MQTTAdapter = memo(({
-    serverConfig, updateOdds
+export const MQTTAdapter = ({
+    topic,updateOdds
 }:{
-    serverConfig: MQTTServerConfig, 
-    updateOdds: (odds:OddsItem) => void
+    topic: string;
+    updateOdds: (odds:OddsItem) => void;
 }) => {
 
+    const { client } = useContext(MQTTClientContext) as MQTTClientContext
+
     useEffect(() => {
-        log.info("connect...")
-
-        const client = mqtt.connect(serverConfig.url)
-
-        client.on("connect",(connAck) => {
-            log.info("mqtt client connect event")
-        })
-
-        client.on("error",(error) => {
-            log.info("mqtt client error event")
-        })
-
-        client.on("message",(topic,msg) => {
+        client?.on("message",(topic,msg) => {
             const json = JSON.parse(new String(msg).toString())
             const odds = ({
                 id: '',
@@ -46,25 +31,14 @@ export const MQTTAdapter = memo(({
             updateOdds(odds)
         })
 
-        client.on("close",() => {
-            log.info("mqtt client close event")
-        })
-
-        client.on("end",() => {
-            log.info("mqtt client end event")
-        })
-
-        client.subscribe(serverConfig.topic)
+        log.info(`client.subscribe topic:${topic}...`)
+        client?.subscribe(topic)
 
         return () => {
-            log.info("end...")
-            client.unsubscribe(serverConfig.topic)
-            client.end();
+            log.info("client.unsubscribe...")
+            client?.unsubscribe(topic)
         }
-    },[serverConfig])
+    },[topic,client?.connected])
 
     return (<></>)
-},({serverConfig:prev},{serverConfig:next}) => {
-    var _ = require('lodash');
-    return _.isEqual(prev,next);
-})
+}

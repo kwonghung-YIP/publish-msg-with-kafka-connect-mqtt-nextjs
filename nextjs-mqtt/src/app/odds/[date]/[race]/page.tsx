@@ -1,3 +1,4 @@
+import { MQTTClientApp } from "@/components/MQTTClientApp";
 import { OddsItem, RaceHorse } from "@/components/Odds";
 import OddsTable from "@/components/OddsTable";
 import * as pino from "pino"
@@ -21,9 +22,9 @@ const Page = async ({params}:{params:{date:string,race:string}}) => {
     //log.info(`horses.length: ${horses.length}`)
     //log.info(`odds.length: ${odds.length}`)
     return (
-        <>
+        <MQTTClientApp serverConfig={{url:"ws://192.168.19.130:8000/mqtt"}}>
             <OddsTable horses={horses} initOdds={odds}/>
-        </>
+        </MQTTClientApp>
     )
 }
 
