@@ -88,7 +88,8 @@ SELECT
   cast(o.odds as double) as odds,
   o.sts,
   o.ver as ver,
-  o.lastUpd as lastupd
+  o.lastUpd as lastupd/*,
+  'odds/forecast/' + format_date(r.race_date,'yyyyMMdd') + '/' + cast(r.race_no as varchar) as mqtt_topic*/
 FROM odds o
   INNER JOIN race r on o.race_id = r.id
 PARTITION BY o.id
@@ -101,6 +102,36 @@ WITH (
 ) AS 
 SELECT *
 FROM odds_forecast
+EMIT CHANGES;
+
+CREATE OR REPLACE STREAM odds_forecast_20240209_1_json
+WITH (
+  KAFKA_TOPIC = 'odds-forecast-20240209-1-json',
+  VALUE_FORMAT = 'JSON'
+) AS 
+SELECT *
+FROM odds_forecast
+WHERE race_date = '2024-02-09' and race_no = 1
+EMIT CHANGES;
+
+CREATE OR REPLACE STREAM odds_forecast_20240209_2_json
+WITH (
+  KAFKA_TOPIC = 'odds-forecast-20240209-2-json',
+  VALUE_FORMAT = 'JSON'
+) AS 
+SELECT *
+FROM odds_forecast
+WHERE race_date = '2024-02-09' and race_no = 2
+EMIT CHANGES;
+
+CREATE OR REPLACE STREAM odds_forecast_20240209_3_json
+WITH (
+  KAFKA_TOPIC = 'odds-forecast-20240209-3-json',
+  VALUE_FORMAT = 'JSON'
+) AS 
+SELECT *
+FROM odds_forecast
+WHERE race_date = '2024-02-09' and race_no = 3
 EMIT CHANGES;
 
 CREATE OR REPLACE TABLE race_horse
@@ -139,7 +170,7 @@ CREATE SINK CONNECTOR IF NOT EXISTS "my-redis-sink-json" WITH (
 CREATE SINK CONNECTOR IF NOT EXISTS "my-mqtt-sink" WITH (
     "connector.class" = 'io.confluent.connect.mqtt.MqttSinkConnector',
     "tasks.max" = '1',
-    "topics" = 'all_odds_json',
+    "topics.regex" = 'odds-forecast-[0-9]{8}-[0-9]{1,2}-json',
     "mqtt.server.uri" = 'tcp://hivemq:1883',
     "mqtt.qos" = '2',
     "key.converter" = 'org.apache.kafka.connect.storage.StringConverter',
@@ -148,3 +179,21 @@ CREATE SINK CONNECTOR IF NOT EXISTS "my-mqtt-sink" WITH (
     "confluent.topic.replication.factor" = '1'
 );
 
+/*
+    "transforms" = 'valueToKey,extractField,extractTopic',
+    "transforms.valueToKey.type" = 'org.apache.kafka.connect.transforms.ValueToKey',
+    "transforms.valueToKey.fields" = 'MQTT_TOPIC',
+    "transforms.extractField.type" = 'org.apache.kafka.connect.transforms.ExtractField$Key',
+    "transforms.extractField.field" = 'MQTT_TOPIC',
+    "transforms.extractTopic.type" = 'io.confluent.connect.transforms.ExtractTopic$Key',
+
+    "value.converter" = 'org.apache.kafka.connect.storage.StringConverter',
+
+    "value.converter" = 'org.apache.kafka.connect.json.JsonConverter',
+    "value.converter.schemas.enable" = 'false',
+
+    "value.converter" = 'io.confluent.connect.avro.AvroConverter',
+    "value.converter.schemas.enable" = 'true',
+    "value.converter.schema.registry.url" = 'http://schema-registry:8081',
+
+*/

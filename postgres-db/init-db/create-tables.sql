@@ -229,8 +229,8 @@ begin
     ) values
         (1, '09-feb-2024', '13:32', 'Wolverhampton', 5),
         (2, '09-feb-2024', '14:02', 'Wolverhampton', 7),
-        (3, '09-feb-2024', '14:32', 'Wolverhampton', 15),
-        (4, '09-feb-2024', '14:32', 'Wolverhampton', 22),
+        (3, '09-feb-2024', '14:32', 'Wolverhampton', 22),
+        (4, '09-feb-2024', '14:32', 'Wolverhampton', 13),
         (5, '09-feb-2024', '14:32', 'Wolverhampton', 17),
         (1, '10-feb-2024', '15:35', 'Newcastle', 9),
         (2, '10-feb-2024', '16:10', 'Newcastle', 12),

@@ -23,7 +23,7 @@ const Page = async ({params}:{params:{date:string,race:string}}) => {
     //log.info(`odds.length: ${odds.length}`)
     return (
         <MQTTClientApp serverConfig={{url:"ws://192.168.19.130:8000/mqtt"}}>
-            <OddsTable horses={horses} initOdds={odds}/>
+            <OddsTable horses={horses} initOdds={odds} date={params.date} race={params.race}/>
         </MQTTClientApp>
     )
 }

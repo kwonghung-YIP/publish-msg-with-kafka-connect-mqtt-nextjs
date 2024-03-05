@@ -183,7 +183,8 @@ SELECT
   cast(o.odds as double) as odds,
   o.sts,
   o.ver as ver,
-  o.lastUpd as lastupd
+  o.lastUpd as lastupd,
+  'odds/forecast/' + format_date(r.race_date,'yyyyMMdd') + '/' + cast(r.race_no as varchar) as mqtt_topic
 FROM odds o
   INNER JOIN race r on o.race_id = r.id
 PARTITION BY o.id
@@ -366,6 +367,9 @@ curl -i -X POST http://localhost:8083/connectors \
         "mqtt.qos": "2",
         "key.converter": "org.apache.kafka.connect.storage.StringConverter",
         "value.converter": "org.apache.kafka.connect.storage.StringConverter",
+        "transforms": "extractTopic",
+        "transforms.extractTopic.type": "io.confluent.connect.transforms.ExtractTopic$Key",
+        "transforms.extractTopic.field": "mqtt_topic",
         "confluent.topic.bootstrap.servers": "kafka-broker:29092",
         "confluent.topic.replication.factor": "1"
       }
@@ -460,6 +464,9 @@ order by lastupd desc limit 5;
 Subsrcibe to HiveMQ "all_odds_json" topic in mqtt(tcp) protocol with MQTT.js package 
 ```bash
 npx mqtt sub -t 'all_odds_json' -h 'localhost' -p '1883' -l 'mqtt' -i 'mqttjs-client-1' -v
+```
+```bash
+npx mqtt sub -t 'odds-forecast-20240209-1-json' -h 'localhost' -p '1883' -l 'mqtt' -i 'mqttjs-client-1' -v
 ```
 Subsrcibe to HiveMQ "all_odds_json" topic in ws(websocket) protocol with MQTT.js package (not working) 
 ```bash

@@ -14,10 +14,12 @@ const log = pino.pino()
 const getKey = (odds:OddsItem):string => odds.fstLeg+"-"+odds.secLeg
 
 const OddsTable = ({
-    horses,initOdds
+    horses,initOdds,date,race
 }:{
     horses:RaceHorse[],
-    initOdds:OddsItem[]
+    initOdds:OddsItem[],
+    date:string,
+    race:string
 }) => {
 
     const [oddsMap,setOddsMap] = useImmer(new Map(initOdds.map(odds=>[getKey(odds),odds])))
@@ -35,7 +37,7 @@ const OddsTable = ({
     return (
         <>
             <OddsTableView horses={horses} odds={oddsMap}/>
-            <MQTTAdapter topic="all_odds_json" updateOdds={updateOdds}/>
+            <MQTTAdapter topic={`odds-forecast-${date}-${race}-json`} updateOdds={updateOdds}/>
         </>
         
     )
