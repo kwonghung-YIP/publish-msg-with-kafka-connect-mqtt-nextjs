@@ -3,15 +3,18 @@ import { OddsItem, RaceHorse } from "@/components/Odds";
 import OddsTable from "@/components/OddsTable";
 import * as pino from "pino"
 
+const MQTT_URL = process.env.MQTT_URL
+const LOCAL_NEXTJS = process.env.LOCAL_NEXTJS
+
 const log = pino.pino()
 
 async function fetchHorse(date:string,race:string) {
-    const resp = await fetch(`http://localhost:3000/api/horse/${date}/${race}`, {cache:"no-cache"});
+    const resp = await fetch(`http://${LOCAL_NEXTJS}/api/horse/${date}/${race}`, {cache:"no-cache"});
     return resp.json()
 }
 
 async function fetchOdds(date:string,race:string) {
-    const resp = await fetch(`http://localhost:3000/api/odds/${date}/${race}`, {cache:"no-cache"});
+    const resp = await fetch(`http://${LOCAL_NEXTJS}/api/odds/${date}/${race}`, {cache:"no-cache"});
     return resp.json()
 }
 
@@ -22,7 +25,7 @@ const Page = async ({params}:{params:{date:string,race:string}}) => {
     //log.info(`horses.length: ${horses.length}`)
     //log.info(`odds.length: ${odds.length}`)
     return (
-        <MQTTClientApp serverConfig={{url:"ws://192.168.19.130:8000/mqtt"}}>
+        <MQTTClientApp serverConfig={{url:`${MQTT_URL}`}}>
             <OddsTable horses={horses} initOdds={odds} date={params.date} race={params.race}/>
         </MQTTClientApp>
     )

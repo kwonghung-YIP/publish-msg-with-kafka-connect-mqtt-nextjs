@@ -151,3 +151,25 @@ services:
   #  ports:
   #    - 9000:8080
 
+  nextjs-mqtt:
+    image: kwonghung/nextjs-odds-push-mqtt:1.0.0
+    container_name: nextjs
+    depends_on:
+      - hivemq
+      - redis
+    build:
+      context: ./nextjs-mqtt
+    ports:
+      - 3000:3000
+    expose:
+      - 3000
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    configs:
+      - source: nextjs-production-env
+        target: /app/.env.production.local
+
+configs:
+  nextjs-production-env:
+    file: ./nextjs-mqtt/.env.production.local

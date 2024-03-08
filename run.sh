@@ -1,6 +1,6 @@
 #!/bin/bash
 
-docker compose up -d
+docker compose up -d --build
 
 echo "wait until ksqldb ready..."
 for i in {1..90}

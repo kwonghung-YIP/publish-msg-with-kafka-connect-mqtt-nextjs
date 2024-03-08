@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "redis";
 import * as pino from "pino"
 
+const REDIS_HOST = process.env.REDIS_HOST
 const log = pino.pino()
 
 export const GET = async (
@@ -17,8 +18,9 @@ export const GET = async (
 
     log.info(`params: date:${date} race:${race}`);
 
+    log.info(`REDIS_HOST:${REDIS_HOST}`)
     const client = createClient({
-        url: 'redis://localhost:6379'
+        url: `redis://${REDIS_HOST}`
     });
 
     client.on('error', err => console.log('redis client error:', err));
@@ -44,7 +46,7 @@ export const GET = async (
         odds: value.ODDS,
         status: value.STATUS,
         ver: value.VER,
-        lastUpdate: new Date(value.LASTUPD)
+        lastUpdate: new Date(value.LASTUPD as number)
     } as OddsItem));
 
     return NextResponse.json(oddsList);
