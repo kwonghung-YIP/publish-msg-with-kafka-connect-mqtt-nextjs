@@ -1,28 +1,23 @@
-# publish-msg-with-kafka-connect-mqtt-nextjs
-Message publishing with Kafka Connect, MQTT(HiveMQ) and Nextjs
-
 ## Introduction
 
-This repo demostrate how to publish message from Postgresql backend to Reactjs frontend via the flow below:
+This repo demostrate publishing DB change in PostgreSQL to Reactjs frontend via Kafka Connect and MQTT:
 
 ![Application Architecture](/odds-publish-mqtt.jpg)
 
-## How to run this demo (Overview)
+## How to run this demo
 
-1. Start docker-compose.yml and spin up the infastructure
-1. Define the backend tables in postgresql
-1. Install the following kafka-connectors
-1. Create kafka-jdbc-source-connector to populate postgresql tables into kafka
-1. Create KStream and KTable in ksqlDB
-1. Create kafka-redis-sink-connector to publish KStream to redis
-1. Create redisSearch index for seaching odds data by date and race no
-1. Create kafka-mqtt-sink-connector to publish KStream to HiveMq
-1. Update postgres table with with postgres-cli
-1. Test redisSearch and redisJSON with redis-cli
-1. Test mqtt subscription with hivemq-cli
-1. Start nextjs server and run the front-end
+Assume that you have install docker compose, curl and jq, and then run ./run.sh, that's it.
 
-## Start docker-compose.yml
+The run.sh did the following:
+
+1. Start the infrastructure defined in docker-compose.yml.
+1. Wait until the ksqlDB was ready, then run the [init.sql](/ksqldb/init.sql) to create kStream, kTable and Connectors.
+1. Create the Redis Search index with ft.create.
+1. Run the [updateOdds.sh](/updateOdds.sh) to generate random change in odds table
+
+Launch the odds table react (http://localhost:3000/odds/20240209/1)
+
+## Docker compose and infrasturcture
 To clear up the docker runtime:
 ```bash
 docker compose down
@@ -34,7 +29,7 @@ docker rm -f `docker ps -a -q`
 
 Start the docker compose:
 ```bash
-docker compose up -d
+docker compose up -d --build
 ```
 
 ### Resource and References
