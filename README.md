@@ -5,8 +5,7 @@ Message publishing with Kafka Connect, MQTT(HiveMQ) and Nextjs
 
 This repo demostrate how to publish message from Postgresql backend to Reactjs frontend via the flow below:
 
-postgresql => kafka-connect-jdbc-source => ksqldb => kafka-connect-redis-sink => redis <= nextjs api route <= reactjs
-                                                  => kafka-connect-mqtt-sink => hiveMQ => mqtt.js => reactjs 
+[Application Architecture](/odds-publish-mqtt.jpg)
 
 ## How to run this demo (Overview)
 
