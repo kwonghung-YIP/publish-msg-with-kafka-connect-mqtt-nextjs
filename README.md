@@ -6,7 +6,7 @@ This repo demostrate publishing DB change in PostgreSQL to Reactjs frontend via 
 
 ## How to run this demo
 
-Assume that you have install docker compose, curl and jq, and then run ./run.sh, that's it.
+Assume that you have install docker compose, curl and jq, and then run [./run.sh](/run.sh), that's it.
 
 The run.sh did the following:
 
