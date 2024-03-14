@@ -2,7 +2,7 @@
 
 This repo demostrate publishing DB change in PostgreSQL to Reactjs frontend via Kafka Connect and MQTT:
 
-![Application Architecture](/odds-publish-mqtt.jpg)
+![Application Architecture](/odds-publish-mqtt-architecture.jpg)
 
 ## How to run this demo
 
@@ -16,6 +16,8 @@ The run.sh did the following:
 1. Run the [updateOdds.sh](/updateOdds.sh) to generate random change in odds table
 
 Launch the odds table react (http://localhost:3000/odds/20240209/1)
+
+![Stream Flow](/odds-publish-mqtt-stream-flow.jpg)
 
 ## Docker compose and infrasturcture
 To clear up the docker runtime:
