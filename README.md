@@ -15,6 +15,8 @@ The run.sh did the following:
 1. Create the Redis Search index with ft.create.
 1. Run the [updateOdds.sh](/updateOdds.sh) to generate random change in odds table
 
+## Stream Flow
+
 Launch the odds table react (http://localhost:3000/odds/20240209/1)
 
 ![Stream Flow](/odds-publish-mqtt-stream-flow.jpg)
